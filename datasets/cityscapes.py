@@ -3,8 +3,8 @@ from torch.utils import data
 import glob
 import os
 
-gtFine_dir = 'data/gtFine'
-leftImg8bit_dir = 'data/leftImg8bit'
+gtFine_dir = 'data/cityscapes/gtFine'
+leftImg8bit_dir = 'data/cityscapes/leftImg8bit'
 
 def load_img(path):
     return Image.open(path).convert('RGB')
