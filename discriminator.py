@@ -4,7 +4,7 @@ import torch.nn.functional as F
 
 # patchgan from dcgan tutorial
 class Discriminator(nn.Module):
-    def __init__(self, ndf=64):
+    def __init__(self, nc, ndf=64):
         super(Discriminator, self).__init__()
         self.ndf = ndf
         self.main = nn.Sequential(
