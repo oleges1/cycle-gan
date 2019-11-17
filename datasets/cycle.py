@@ -2,6 +2,7 @@ from os.path import join
 from PIL import Image
 import os
 from torch.utils import data
+from torchvision import transforms
 
 class CycleDataset(data.Dataset):
     """A dataset class for paired image dataset.
