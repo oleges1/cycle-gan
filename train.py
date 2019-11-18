@@ -6,19 +6,22 @@ from torch.utils.data import DataLoader
 import itertools
 from tensorboardX import SummaryWriter
 from tqdm import tqdm
+from utils import *
+import os
+
+def datasets_by_name(name, **params):
+    del params['name']
+    if name == 'cityscapes':
+        return CityScapes(**params), CityScapes('test', **params)
+    elif name == 'edges2shoes':
+        data_train = CycleDataset('data/edges2shoes/', 'train')
+        data_test = CycleDataset('data/edges2shoes/', 'val')
+        return data_train, data_test
+    else:
+        raise NotImplementedError('Unknown dataset')
 
 
-lambda_idt = 0
-lambda_C = 0.5
-lambda_D = 0.5
-lr = 0.0002
-beta1 = 0.5
-verbose_period = 50
-epochs = 100
-writer = SummaryWriter("cityscapes")
-
-
-def train():
+def train(config):
     genAB = UNet(3, 3, bilinear=False).cuda()
     init_weights(genAB, 'normal')
     genBA = UNet(3, 3, bilinear=False).cuda()
@@ -28,19 +31,22 @@ def train():
     discrB = Discriminator(3).cuda()
     init_weights(discrB, 'normal')
 
-    data_train = CityScapes()
-    data_test = CityScapes('test')
-
-    train_dataloader = DataLoader(data_train, batch_size=8, shuffle=True, num_workers=4)
+    writer = SummaryWriter(config.name)
+    data_train, data_test = datasets_by_name(config.dataset.name, **config.dataset)
+    train_dataloader = DataLoader(data_train, batch_size=config.bs, shuffle=True, num_workers=config.num_workers)
+    test_dataloader = DataLoader(data_test, batch_size=config.bs, shuffle=True, num_workers=config.num_workers)
 
     idt_loss = nn.L1Loss()
     cycle_consistency = nn.L1Loss()
     discriminator_loss = nn.BCELoss()
+    lambda_idt, lambda_C, lambda_D = config.loss.lambda_idt, config.loss.lambda_C, config.loss.lambda_D
 
-    optG = torch.optim.AdamW(itertools.chain(genAB.parameters(), genBA.parameters()), lr=lr)
-    optD = torch.optim.AdamW(itertools.chain(discrA.parameters(), discrB.parameters()), lr=lr)
+    optG = torch.optim.Adam(itertools.chain(genAB.parameters(), genBA.parameters()), lr=config.train.lr, betas=(config.train.beta1, 0.999))
+    optD = torch.optim.Adam(itertools.chain(discrA.parameters(), discrB.parameters()), lr=config.train.lr, betas=(config.train.beta1, 0.999))
 
     for epoch in range(epochs):
+        set_train([genAB, genBA, discrA, discrB])
+        set_requires_grad([genAB, genBA, discrA, discrB], True)
         for i, (batch_A, batch_B) in enumerate(tqdm(train_dataloader)):
             batch_A, batch_B = batch_A.cuda(), batch_B.cuda()
             optG.zero_grad()
@@ -59,6 +65,7 @@ def train():
                 set_requires_grad([discrA, discrB], False)
                 discr_feedbackA = discrA(fake_A)
                 discr_feedbackB = discrB(fake_B)
+    #             print(discr_feedbackA)
                 loss_G += discriminator_loss(discr_feedbackA, torch.ones_like(discr_feedbackA)) * lambda_D
                 loss_G += discriminator_loss(discr_feedbackB, torch.ones_like(discr_feedbackB)) * lambda_D
             loss_G.backward()
@@ -66,30 +73,105 @@ def train():
             optG.step()
             if lambda_D > 0:
                 set_requires_grad([discrA, discrB], True)
+                loss_D_fake, loss_D_true = 0, 0
                 optD.zero_grad()
-                batch_DA = torch.cat([fake_A.detach(), batch_A])
-                logits = discrA(batch_DA)
-                true = torch.ones_like(logits)
-                true[:fake_A.shape[0]] = 0
-                loss_D += discriminator_loss(logits, true)
+                logits = discrA(fake_A.detach())
+                loss_D_fake += discriminator_loss(logits, torch.zeros_like(logits))
 
-                batch_DB = torch.cat([fake_B.detach(), batch_B])
-                logits = discrB(batch_DB)
-                true = torch.ones_like(logits)
-                true[:fake_B.shape[0]] = 0
-                loss_D += discriminator_loss(logits, true)
-                loss_D.backward()
+                logits = discrB(fake_B.detach())
+                loss_D_fake += discriminator_loss(logits, torch.zeros_like(logits))
+                loss_D_fake.backward()
                 torch.nn.utils.clip_grad_norm_(itertools.chain(discrA.parameters(), discrB.parameters()), 15)
                 optD.step()
+
+                optD.zero_grad()
+                logits = discrA(batch_A)
+                loss_D_true += discriminator_loss(logits, torch.ones_like(logits))
+                logits = discrB(batch_B)
+                loss_D_true += discriminator_loss(logits, torch.ones_like(logits))
+                loss_D_true.backward()
+                torch.nn.utils.clip_grad_norm_(itertools.chain(discrA.parameters(), discrB.parameters()), 15)
+                optD.step()
+                loss_D = loss_D_fake + loss_D_true
             if (i % verbose_period == 0):
                 writer.add_scalar('train/loss_G', loss_G.item(), len(train_dataloader) * epoch + i)
                 if lambda_D > 0:
                     writer.add_scalar('train/loss_D', loss_D.item(), len(train_dataloader) * epoch + i)
-                    writer.add_scalar('train/mean_D_A(G)', discr_feedbackA.mean().item(), len(train_dataloader) * epoch + i)
-                    writer.add_scalar('train/mean_D_B(G)', discr_feedbackB.mean().item(), len(train_dataloader) * epoch + i)
+                    writer.add_scalar('train/mean_D_A', discr_feedbackA.mean().item(), len(train_dataloader) * epoch + i)
+                    writer.add_scalar('train/mean_D_B', discr_feedbackB.mean().item(), len(train_dataloader) * epoch + i)
                 for batch_i in range(fake_A.shape[0]):
                     concat = torch.cat([fake_A[batch_i], batch_B[batch_i]], dim=-1)
-                    writer.add_image('fake_A_' + str(batch_i), concat, len(train_dataloader) * epoch + i)
+                    writer.add_image('train/fake_A_' + str(batch_i), concat, len(train_dataloader) * epoch + i)
                 for batch_i in range(fake_B.shape[0]):
                     concat = torch.cat([fake_B[batch_i], batch_A[batch_i]], dim=-1)
-                    writer.add_image('fake_B_' + str(batch_i), concat, len(train_dataloader) * epoch + i)
+                    writer.add_image('train/fake_B_' + str(batch_i), concat, len(train_dataloader) * epoch + i)
+        if not config.validate:
+            continue
+        set_eval([genAB, genBA, discrA, discrB])
+        set_requires_grad([genAB, genBA, discrA, discrB], False)
+        loss_G, loss_D, discr_feedbackA_mean, discr_feedbackB_mean = 0, 0, 0, 0
+        for i, (batch_A, batch_B) in enumerate(tqdm(test_dataloader)):
+            batch_A, batch_B = batch_A.cuda(), batch_B.cuda()
+            fake_B = genAB(batch_A)
+            cycle_A = genBA(fake_B)
+            fake_A = genBA(batch_B)
+            cycle_B = genAB(fake_A)
+            if lambda_idt > 0:
+                loss_G += idt_loss(fake_B, batch_B) * lambda_idt
+                loss_G += idt_loss(fake_A, batch_A) * lambda_idt
+            if lambda_C > 0:
+                loss_G += cycle_consistency(cycle_A, batch_A) * lambda_C
+                loss_G += cycle_consistency(cycle_B, batch_B) * lambda_C
+            if lambda_D > 0:
+                discr_feedbackA = discrA(fake_A)
+                discr_feedbackB = discrB(fake_B)
+                loss_G += discriminator_loss(discr_feedbackA, torch.ones_like(discr_feedbackA)) * lambda_D
+                loss_G += discriminator_loss(discr_feedbackB, torch.ones_like(discr_feedbackB)) * lambda_D
+            if lambda_D > 0:
+                loss_D_fake, loss_D_true = 0, 0
+                optD.zero_grad()
+                logits = discrA(fake_A.detach())
+                loss_D_fake += discriminator_loss(logits, torch.zeros_like(logits))
+
+                logits = discrB(fake_B.detach())
+                loss_D_fake += discriminator_loss(logits, torch.zeros_like(logits))
+                loss_D_fake.backward()
+                torch.nn.utils.clip_grad_norm_(itertools.chain(discrA.parameters(), discrB.parameters()), 15)
+                optD.step()
+
+                optD.zero_grad()
+                logits = discrA(batch_A)
+                loss_D_true += discriminator_loss(logits, torch.ones_like(logits))
+                logits = discrB(batch_B)
+                loss_D_true += discriminator_loss(logits, torch.ones_like(logits))
+                loss_D_true.backward()
+                torch.nn.utils.clip_grad_norm_(itertools.chain(discrA.parameters(), discrB.parameters()), 15)
+                optD.step()
+                loss_D += loss_D_fake + loss_D_true
+            discr_feedbackA_mean += discr_feedbackA.mean()
+            discr_feedbackB_mean += discr_feedbackB.mean()
+            if i == 0:
+                for batch_i in range(fake_A.shape[0]):
+                    concat = torch.cat([fake_A[batch_i], batch_B[batch_i]], dim=-1)
+                    writer.add_image('val/fake_A_' + str(batch_i), concat, epoch)
+                for batch_i in range(fake_B.shape[0]):
+                    concat = torch.cat([fake_B[batch_i], batch_A[batch_i]], dim=-1)
+                    writer.add_image('val/fake_B_' + str(batch_i), concat, epoch)
+        loss_G /= len(test_dataloader)
+        writer.add_scalar('val/loss_G', loss_G.item(), epoch)
+        if lambda_D > 0:
+            loss_D /= len(test_dataloader)
+            discr_feedbackA /= len(test_dataloader)
+            discr_feedbackB /= len(test_dataloader)
+            writer.add_scalar('val/loss_D', loss_D.item(), epoch)
+            writer.add_scalar('val/mean_D_A', discr_feedbackA.item(), epoch)
+            writer.add_scalar('val/mean_D_B', discr_feedbackB.item(), epoch)
+        torch.save({
+            'genAB': genAB.state_dict(),
+            'genBA': genBA.state_dict(),
+            'discrA': discrA.state_dict(),
+            'discrB': discrB.state_dict(),
+            'optG': optG.state_dict(),
+            'optD': optD.state_dict(),
+            'epoch': epoch
+        }, os.path.join(config.name, 'model.pth'))

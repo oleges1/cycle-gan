@@ -1,5 +1,22 @@
 from torch.nn import init
 
+class DotDict(dict):
+    """A dictionary that supports dot notation
+    as well as dictionary access notation
+    usage: d = DotDict() or d = DotDict({'val1':'first'})
+    set attributes: d.val2 = 'second' or d['val2'] = 'second'
+    get attributes: d.val2 or d['val2']
+    """
+    __getattr__ = dict.__getitem__
+    __setattr__ = dict.__setitem__
+    __delattr__ = dict.__delitem__
+
+    def __init__(self, dct):
+        for key, value in dct.items():
+            if hasattr(value, 'keys'):
+                value = DotDict(value)
+            self[key] = value
+
 def init_weights(net, init_type='normal', init_gain=0.02):
     """Initialize network weights.
     Parameters:
@@ -43,3 +60,15 @@ def set_requires_grad(nets, requires_grad=False):
         if net is not None:
             for param in net.parameters():
                 param.requires_grad = requires_grad
+
+def set_train(nets):
+    if not isinstance(nets, list):
+        nets = [nets]
+    for net in nets:
+        net.train()
+
+def set_eval(nets):
+    if not isinstance(nets, list):
+        nets = [nets]
+    for net in nets:
+        net.eval()
