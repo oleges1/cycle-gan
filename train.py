@@ -94,7 +94,7 @@ def train(config):
                 torch.nn.utils.clip_grad_norm_(itertools.chain(discrA.parameters(), discrB.parameters()), 15)
                 optD.step()
                 loss_D = loss_D_fake + loss_D_true
-            if (i % verbose_period == 0):
+            if (i % config.train.verbose_period == 0):
                 writer.add_scalar('train/loss_G', loss_G.item(), len(train_dataloader) * epoch + i)
                 if lambda_D > 0:
                     writer.add_scalar('train/loss_D', loss_D.item(), len(train_dataloader) * epoch + i)

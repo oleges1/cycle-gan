@@ -9,7 +9,7 @@ dataset:
 train:
     lr: 0.0002
     beta1: 0.5
-    verbose_period: 50
+    verbose_period: 100
     epochs: 12
 
 loss:
