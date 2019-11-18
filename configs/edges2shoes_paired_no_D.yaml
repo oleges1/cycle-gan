@@ -1,6 +1,6 @@
 
 name: edges2shoes_paired_no_D
-bs: 12
+bs: 16
 num_workers: 6
 validate: True
 dataset:

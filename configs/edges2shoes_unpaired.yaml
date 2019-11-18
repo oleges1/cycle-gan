@@ -1,6 +1,6 @@
 
 name: edges2shoes_unpaired
-bs: 8
+bs: 16
 num_workers: 4
 validate: True
 dataset:
