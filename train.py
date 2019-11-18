@@ -9,7 +9,7 @@ from tqdm import tqdm
 from utils import *
 import os
 
-def datasets_by_name(name, **params):
+def datasets_by_name(name, params):
     del params['name']
     if name == 'cityscapes':
         return CityScapes(**params), CityScapes('test', **params)
@@ -32,7 +32,7 @@ def train(config):
     init_weights(discrB, 'normal')
 
     writer = SummaryWriter(config.name)
-    data_train, data_test = datasets_by_name(config.dataset.name, **config.dataset)
+    data_train, data_test = datasets_by_name(config.dataset.name, config.dataset)
     train_dataloader = DataLoader(data_train, batch_size=config.bs, shuffle=True, num_workers=config.num_workers)
     test_dataloader = DataLoader(data_test, batch_size=config.bs, shuffle=True, num_workers=config.num_workers)
 
