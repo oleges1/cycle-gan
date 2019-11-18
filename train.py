@@ -1,5 +1,6 @@
 from unet import *
 from datasets.cityscapes import *
+from datasets.cycle import *
 from discriminator import Discriminator
 from torch import nn
 from torch.utils.data import DataLoader
