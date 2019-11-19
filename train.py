@@ -66,7 +66,6 @@ def train(config):
                 set_requires_grad([discrA, discrB], False)
                 discr_feedbackA = discrA(fake_A)
                 discr_feedbackB = discrB(fake_B)
-    #             print(discr_feedbackA)
                 loss_G += discriminator_loss(discr_feedbackA, torch.ones_like(discr_feedbackA)) * lambda_D
                 loss_G += discriminator_loss(discr_feedbackB, torch.ones_like(discr_feedbackB)) * lambda_D
             loss_G.backward()
@@ -128,6 +127,8 @@ def train(config):
                 discr_feedbackB = discrB(fake_B)
                 loss_G += discriminator_loss(discr_feedbackA, torch.ones_like(discr_feedbackA)) * lambda_D
                 loss_G += discriminator_loss(discr_feedbackB, torch.ones_like(discr_feedbackB)) * lambda_D
+                discr_feedbackA_mean += discr_feedbackA.mean()
+                discr_feedbackB_mean += discr_feedbackB.mean()
             if lambda_D > 0:
                 loss_D_fake, loss_D_true = 0, 0
                 optD.zero_grad()
@@ -149,8 +150,6 @@ def train(config):
                 torch.nn.utils.clip_grad_norm_(itertools.chain(discrA.parameters(), discrB.parameters()), 15)
                 optD.step()
                 loss_D += loss_D_fake + loss_D_true
-            discr_feedbackA_mean += discr_feedbackA.mean()
-            discr_feedbackB_mean += discr_feedbackB.mean()
             if i == 0:
                 for batch_i in range(fake_A.shape[0]):
                     concat = torch.cat([fake_A[batch_i], batch_B[batch_i]], dim=-1)
