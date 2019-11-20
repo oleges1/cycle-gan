@@ -151,11 +151,11 @@ def train(config):
         writer.add_scalar('val/loss_G', loss_G.item(), epoch)
         if lambda_D > 0:
             loss_D /= len(test_dataloader)
-            discr_feedbackA /= len(test_dataloader)
-            discr_feedbackB /= len(test_dataloader)
+            discr_feedbackA_mean /= len(test_dataloader)
+            discr_feedbackB_mean /= len(test_dataloader)
             writer.add_scalar('val/loss_D', loss_D.item(), epoch)
-            writer.add_scalar('val/mean_D_A', discr_feedbackA.item(), epoch)
-            writer.add_scalar('val/mean_D_B', discr_feedbackB.item(), epoch)
+            writer.add_scalar('val/mean_D_A', discr_feedbackA_mean.item(), epoch)
+            writer.add_scalar('val/mean_D_B', discr_feedbackB_mean.item(), epoch)
         torch.save({
             'genAB': genAB.state_dict(),
             'genBA': genBA.state_dict(),
