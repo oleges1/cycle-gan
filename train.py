@@ -131,24 +131,14 @@ def train(config):
                 discr_feedbackB_mean += discr_feedbackB.mean()
             if lambda_D > 0:
                 loss_D_fake, loss_D_true = 0, 0
-                optD.zero_grad()
                 logits = discrA(fake_A.detach())
                 loss_D_fake += discriminator_loss(logits, torch.zeros_like(logits))
-
                 logits = discrB(fake_B.detach())
                 loss_D_fake += discriminator_loss(logits, torch.zeros_like(logits))
-                loss_D_fake.backward()
-                torch.nn.utils.clip_grad_norm_(itertools.chain(discrA.parameters(), discrB.parameters()), 15)
-                optD.step()
-
-                optD.zero_grad()
                 logits = discrA(batch_A)
                 loss_D_true += discriminator_loss(logits, torch.ones_like(logits))
                 logits = discrB(batch_B)
                 loss_D_true += discriminator_loss(logits, torch.ones_like(logits))
-                loss_D_true.backward()
-                torch.nn.utils.clip_grad_norm_(itertools.chain(discrA.parameters(), discrB.parameters()), 15)
-                optD.step()
                 loss_D += loss_D_fake + loss_D_true
             if i == 0:
                 for batch_i in range(fake_A.shape[0]):
