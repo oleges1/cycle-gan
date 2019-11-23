@@ -100,10 +100,10 @@ def train(config):
                     writer.add_scalar('train/mean_D_A', discr_feedbackA.mean().item(), len(train_dataloader) * epoch + i)
                     writer.add_scalar('train/mean_D_B', discr_feedbackB.mean().item(), len(train_dataloader) * epoch + i)
                 for batch_i in range(fake_A.shape[0]):
-                    concat = torch.cat([fake_A[batch_i], batch_B[batch_i]], dim=-1)
+                    concat = torch.cat([(fake_A[batch_i] + 1.) / 2., (batch_B[batch_i] + 1.) / 2.], dim=-1)
                     writer.add_image('train/fake_A_' + str(batch_i), concat, len(train_dataloader) * epoch + i)
                 for batch_i in range(fake_B.shape[0]):
-                    concat = torch.cat([fake_B[batch_i], batch_A[batch_i]], dim=-1)
+                    concat = torch.cat([(fake_B[batch_i] + 1.) / 2., (batch_A[batch_i] + 1.) / 2.], dim=-1)
                     writer.add_image('train/fake_B_' + str(batch_i), concat, len(train_dataloader) * epoch + i)
         if not config.validate:
             continue
@@ -142,10 +142,10 @@ def train(config):
                 loss_D += loss_D_fake + loss_D_true
             if i == 0:
                 for batch_i in range(fake_A.shape[0]):
-                    concat = torch.cat([fake_A[batch_i], batch_B[batch_i]], dim=-1)
+                    concat = torch.cat([(fake_A[batch_i] + 1.) / 2., (batch_B[batch_i] + 1.) / 2.], dim=-1)
                     writer.add_image('val/fake_A_' + str(batch_i), concat, epoch)
                 for batch_i in range(fake_B.shape[0]):
-                    concat = torch.cat([fake_B[batch_i], batch_A[batch_i]], dim=-1)
+                    concat = torch.cat([(fake_B[batch_i] + 1.) / 2, (batch_A[batch_i] + 1.) / 2], dim=-1)
                     writer.add_image('val/fake_B_' + str(batch_i), concat, epoch)
         loss_G /= len(test_dataloader)
         writer.add_scalar('val/loss_G', loss_G.item(), epoch)

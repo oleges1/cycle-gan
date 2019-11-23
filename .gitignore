@@ -2,3 +2,6 @@
 *.part
 data/*
 __pycache__/*
+*.pyc
+*.log
+*ipynb_checkpoints*

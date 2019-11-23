@@ -1,16 +1,16 @@
 
-name: edges2shoes_unpaired_better_params
-bs: 16
-num_workers: 4
+name: cityscapes_unpaired_better_params
+bs: 8
+num_workers: 6
 validate: True
 dataset:
-    name: edges2shoes
+    name: cityscapes
 
 train:
     lr: 0.0002
     beta1: 0.5
     verbose_period: 100
-    epochs: 12
+    epochs: 100
 
 loss:
     lambda_idt: 0

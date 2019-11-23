@@ -1,5 +1,5 @@
 
-name: edges2shoes_paired_with_D
+name: edges2shoes_paired_with_D_better_params
 bs: 16
 num_workers: 6
 validate: True
@@ -13,6 +13,6 @@ train:
     epochs: 12
 
 loss:
-    lambda_idt: 0.5
-    lambda_C: 0.5
-    lambda_D: 0.5
+    lambda_idt: 10
+    lambda_C: 5
+    lambda_D: 1
