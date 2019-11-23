@@ -3,6 +3,7 @@ from torch.utils import data
 from torchvision import transforms
 import glob
 import os
+import numpy as np
 
 def load_img(path):
     return Image.open(path).convert('RGB')
@@ -19,7 +20,7 @@ class FolderDataset(data.Dataset):
 
         self.transform_image = transforms.Compose([
             # transforms.RandomResizedCrop(64),
-            transforms.Resize(128),
+            transforms.Resize((128, 128)),
             # transforms.RandomResizedCrop(224),
 #             transforms.ColorJitter(),
             # transforms.RandomAffine(10),
