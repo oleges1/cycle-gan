@@ -23,9 +23,9 @@ def datasets_by_name(name, params):
 
 
 def train(config):
-    genAB = UNet(3, 3, bilinear=False).cuda()
+    genAB = UNet(3, 3, bilinear=config.model.bilinear_upsample).cuda()
     init_weights(genAB, 'normal')
-    genBA = UNet(3, 3, bilinear=False).cuda()
+    genBA = UNet(3, 3, bilinear=config.model.bilinear_upsample).cuda()
     init_weights(genBA, 'normal')
     discrA = Discriminator(3).cuda()
     init_weights(discrA, 'normal')
