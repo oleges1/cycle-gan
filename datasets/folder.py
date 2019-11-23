@@ -9,9 +9,12 @@ def load_img(path):
 
 
 class FolderDataset(data.Dataset):
-    def __init__(self, folder1, folder2):
-        expr = os.path.join(folder1, "*/*.png")
-        paths = glob.glob(expr)
+    def __init__(self, root):
+        paths = []
+        for path, subdirs, files in os.walk(root):
+            for name in files:
+                if name.endswith('.jpg') or name.endswith('.png'):
+                    paths.append(os.path.join(path, name))
         self.data = sorted(paths)
 
         self.transform_image = transforms.Compose([
