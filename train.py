@@ -42,6 +42,7 @@ def train(config):
 
     idt_loss = nn.L1Loss()
     cycle_consistency = nn.L1Loss()
+    l2_loss = nn.MSELoss()
     discriminator_loss = nn.BCELoss()
     lambda_idt, lambda_C, lambda_D = config.loss.lambda_idt, config.loss.lambda_C, config.loss.lambda_D
 
@@ -98,6 +99,8 @@ def train(config):
                 loss_D = loss_D_fake + loss_D_true
             if (i % config.train.verbose_period == 0):
                 writer.add_scalar('train/loss_G', loss_G.item(), len(train_dataloader) * epoch + i)
+                writer.add_scalar('train/pixel_error_A', l2_loss(fake_A, batch_A).mean().item(), len(train_dataloader) * epoch + i)
+                writer.add_scalar('train/pixel_error_B', l2_loss(fake_B, batch_B).mean().item(), len(train_dataloader) * epoch + i)
                 if lambda_D > 0:
                     writer.add_scalar('train/loss_D', loss_D.item(), len(train_dataloader) * epoch + i)
                     writer.add_scalar('train/mean_D_A', discr_feedbackA.mean().item(), len(train_dataloader) * epoch + i)
@@ -113,12 +116,15 @@ def train(config):
         set_eval([genAB, genBA, discrA, discrB])
         set_requires_grad([genAB, genBA, discrA, discrB], False)
         loss_G, loss_D, discr_feedbackA_mean, discr_feedbackB_mean = 0, 0, 0, 0
+        pixel_error_A, pixel_error_B = 0, 0
         for i, (batch_A, batch_B) in enumerate(tqdm(test_dataloader)):
             batch_A, batch_B = batch_A.cuda(), batch_B.cuda()
             fake_B = genAB(batch_A)
             cycle_A = genBA(fake_B)
             fake_A = genBA(batch_B)
             cycle_B = genAB(fake_A)
+            pixel_error_A += l2_loss(fake_A, batch_A).mean()
+            pixel_error_B += l2_loss(fake_B, batch_B).mean()
             if lambda_idt > 0:
                 loss_G += idt_loss(fake_B, batch_B) * lambda_idt
                 loss_G += idt_loss(fake_A, batch_A) * lambda_idt
@@ -151,7 +157,11 @@ def train(config):
                     concat = (torch.cat([fake_B[batch_i], batch_A[batch_i]], dim=-1) + 1.) / 2.
                     writer.add_image('val/fake_B_' + str(batch_i), concat, epoch)
         loss_G /= len(test_dataloader)
+        pixel_error_A /= len(test_dataloader)
+        pixel_error_B /= len(test_dataloader)
         writer.add_scalar('val/loss_G', loss_G.item(), epoch)
+        writer.add_scalar('val/pixel_error_A', pixel_error_A.item(), epoch)
+        writer.add_scalar('val/pixel_error_B', pixel_error_B.item(), epoch)
         if lambda_D > 0:
             loss_D /= len(test_dataloader)
             discr_feedbackA_mean /= len(test_dataloader)
