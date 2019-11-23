@@ -18,6 +18,9 @@ def datasets_by_name(name, params):
         data_train = CycleDataset('data/edges2shoes/', 'train')
         data_test = CycleDataset('data/edges2shoes/', 'val')
         return data_train, data_test
+    elif name == 'folder2folder':
+        data_train = Folder2FolderDataset(params['folder_left'], params['folder_right'])
+        data_test = Folder2FolderDataset(params['folder_left'], params['folder_right'], phase='val')
     else:
         raise NotImplementedError('Unknown dataset')
 
