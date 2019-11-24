@@ -10,6 +10,7 @@ rm imdb_crop.tar
 mv imdb_crop data/
 # cityscapes needs registration!
 # UTKFace needs gdrive api https://susanqq.github.io/UTKFace/
+# simpsons-faces needs kaggle api https://www.kaggle.com/kostastokis/simpsons-faces
 # edges2shoes:
 wget http://efrosgans.eecs.berkeley.edu/pix2pix/datasets/edges2shoes.tar.gz
 tar -zxvf edges2shoes.tar.gz
