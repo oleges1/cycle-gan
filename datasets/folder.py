@@ -1,9 +1,16 @@
-from PIL import Image
+from PIL import Image, ImageFile
 from torch.utils import data
 from torchvision import transforms
 import glob
 import os
 import numpy as np
+
+try:
+    from tqdm import tqdm
+except:
+    tqdm = lambda x: x
+
+ImageFile.LOAD_TRUNCATED_IMAGES = True
 
 def load_img(path):
     return Image.open(path).convert('RGB')
@@ -12,10 +19,14 @@ def load_img(path):
 class FolderDataset(data.Dataset):
     def __init__(self, root):
         paths = []
-        for path, subdirs, files in os.walk(root):
+        for path, subdirs, files in tqdm(os.walk(root)):
             for name in files:
                 if name.endswith('.jpg') or name.endswith('.png'):
-                    paths.append(os.path.join(path, name))
+                    try:
+                        _ = Image.open(os.path.join(path, name))
+                        paths.append(os.path.join(path, name))
+                    except:
+                        continue
         self.data = sorted(paths)
 
         self.transform_image = transforms.Compose([
