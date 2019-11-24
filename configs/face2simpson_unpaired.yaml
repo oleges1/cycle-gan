@@ -1,0 +1,21 @@
+name: face2simpson_unpaired
+bs: 16
+num_workers: 6
+validate: True
+dataset:
+    name: folder2folder
+    folder_left: data/UTKFace
+    folder_right: data/simpsons_cropped
+model:
+    bilinear_upsample: True
+
+train:
+    lr: 0.0002
+    beta1: 0.5
+    verbose_period: 100
+    epochs: 12
+
+loss:
+    lambda_idt: 0
+    lambda_C: 5
+    lambda_D: 1
