@@ -24,7 +24,7 @@ class FolderDataset(data.Dataset):
                 if name.endswith('.jpg') or name.endswith('.png'):
                     try:
                         im = Image.open(os.path.join(path, name))
-                        if (im.height / im.width < 1.5) and (im.height / im.width > 0.5):
+                        if (im.height / im.width < 1.5) and (im.height / im.width > 0.5) and (im.height >= 128) and (im.width >= 128):
                             paths.append(os.path.join(path, name))
                     except:
                         continue
