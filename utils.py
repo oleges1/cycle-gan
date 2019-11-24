@@ -1,4 +1,5 @@
 from torch.nn import init
+import os
 
 class DotDict(dict):
     """A dictionary that supports dot notation
@@ -72,3 +73,14 @@ def set_eval(nets):
         nets = [nets]
     for net in nets:
         net.eval()
+
+def load_if_exsists(path, genAB, genBA, discrA, discrB, optG, optD):
+    if os.path.exists(os.path.join(config.name, 'model.pth')):
+        cpk = torch.load(os.path.join(config.name, 'model.pth'))
+        genAB.load_state_dict(cpk['genAB'])
+        genBA.load_state_dict(cpk['genBA'])
+        discrA.load_state_dict(cpk['discrA'])
+        discrB.load_state_dict(cpk['discrB'])
+        optG.load_state_dict(cpk['optG'])
+        optD.load_state_dict(cpk['optD'])
+    return genAB, genBA, discrA, discrB, optG, optD

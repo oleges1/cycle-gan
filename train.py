@@ -1,7 +1,6 @@
 from unet import *
 from datasets.cityscapes import *
 from datasets.cycle import *
-from datasets.folder import *
 from discriminator import Discriminator
 from torch import nn
 from torch.utils.data import DataLoader
@@ -22,7 +21,6 @@ def datasets_by_name(name, params):
     elif name == 'folder2folder':
         data_train = Folder2FolderDataset(params['folder_left'], params['folder_right'])
         data_test = Folder2FolderDataset(params['folder_left'], params['folder_right'], phase='val')
-        return data_train, data_test
     else:
         raise NotImplementedError('Unknown dataset')
 
@@ -50,6 +48,8 @@ def train(config):
 
     optG = torch.optim.Adam(itertools.chain(genAB.parameters(), genBA.parameters()), lr=config.train.lr, betas=(config.train.beta1, 0.999))
     optD = torch.optim.Adam(itertools.chain(discrA.parameters(), discrB.parameters()), lr=config.train.lr, betas=(config.train.beta1, 0.999))
+
+    genAB, genBA, discrA, discrB, optG, optD = load_if_exsists(config, genAB, genBA, discrA, discrB, optG, optD)
 
     for epoch in range(config.train.epochs):
         set_train([genAB, genBA, discrA, discrB])
