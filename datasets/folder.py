@@ -23,8 +23,9 @@ class FolderDataset(data.Dataset):
             for name in files:
                 if name.endswith('.jpg') or name.endswith('.png'):
                     try:
-                        _ = Image.open(os.path.join(path, name))
-                        paths.append(os.path.join(path, name))
+                        im = Image.open(os.path.join(path, name))
+                        if (im.height / im.width < 1.5) and (im.height / im.width > 0.5):
+                            paths.append(os.path.join(path, name))
                     except:
                         continue
         self.data = sorted(paths)
