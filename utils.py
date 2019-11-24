@@ -74,7 +74,7 @@ def set_eval(nets):
     for net in nets:
         net.eval()
 
-def load_if_exsists(path, genAB, genBA, discrA, discrB, optG, optD):
+def load_if_exsists(config, genAB, genBA, discrA, discrB, optG, optD):
     if os.path.exists(os.path.join(config.name, 'model.pth')):
         cpk = torch.load(os.path.join(config.name, 'model.pth'))
         genAB.load_state_dict(cpk['genAB'])
