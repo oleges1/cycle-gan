@@ -51,9 +51,9 @@ def train(config):
     optG = torch.optim.Adam(itertools.chain(genAB.parameters(), genBA.parameters()), lr=config.train.lr, betas=(config.train.beta1, 0.999))
     optD = torch.optim.Adam(itertools.chain(discrA.parameters(), discrB.parameters()), lr=config.train.lr, betas=(config.train.beta1, 0.999))
 
-    genAB, genBA, discrA, discrB, optG, optD = load_if_exsists(config, genAB, genBA, discrA, discrB, optG, optD)
+    genAB, genBA, discrA, discrB, optG, optD, start_epoch = load_if_exsists(config, genAB, genBA, discrA, discrB, optG, optD)
 
-    for epoch in range(config.train.epochs):
+    for epoch in range(start_epoch, config.train.epochs):
         set_train([genAB, genBA, discrA, discrB])
         set_requires_grad([genAB, genBA, discrA, discrB], True)
         for i, (batch_A, batch_B) in enumerate(tqdm(train_dataloader)):

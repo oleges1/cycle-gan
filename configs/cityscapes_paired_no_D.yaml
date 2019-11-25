@@ -17,4 +17,4 @@ train:
 loss:
     lambda_idt: 10
     lambda_C: 5
-    lambda_D: 1
+    lambda_D: 0

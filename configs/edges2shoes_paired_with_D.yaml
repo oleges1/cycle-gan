@@ -12,7 +12,7 @@ train:
     lr: 0.0002
     beta1: 0.5
     verbose_period: 100
-    epochs: 12
+    epochs: 6
 
 loss:
     lambda_idt: 10
