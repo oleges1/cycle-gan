@@ -1,3 +1,6 @@
+# make folder
+mkdir -p data/
+
 # album_covers_t:
 wget https://archive.org/download/audio-covers/album_covers_t.tar
 tar -xvf album_covers_t.tar

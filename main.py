@@ -1,10 +1,10 @@
-# from time import sleep
-# sleep(21600)
-
 from train import *
 import yaml
+import os
 
-with open('configs/edges2shoes_paired_with_D.yaml', 'r') as f:
-    config = DotDict(yaml.safe_load(f))
-    
-train(config)
+os.system('bash download.sh')
+
+for config_name in os.listdir('configs'):
+    with open(os.path.join('configs', config_name), 'r') as f:
+        config = DotDict(yaml.safe_load(f))
+    train(config)

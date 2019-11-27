@@ -17,27 +17,30 @@ def load_img(path):
 
 
 class FolderDataset(data.Dataset):
-    def __init__(self, root):
+    def __init__(self, params):
         paths = []
-        for path, subdirs, files in tqdm(os.walk(root)):
+        for path, subdirs, files in tqdm(os.walk(params['root'])):
             for name in files:
-                if name.endswith('.jpg') or name.endswith('.png'):
+                if params['filter_folder'] and (name.endswith('.jpg') or name.endswith('.png')):
                     try:
                         im = Image.open(os.path.join(path, name))
                         if (im.height / im.width < 1.5) and (im.height / im.width > 0.5) and (im.height <= 400) and (im.width <= 400) and (im.mode != 'L'):
                             paths.append(os.path.join(path, name))
                     except:
                         continue
+                if not params['filter_folder']:
+                    paths.append(os.path.join(path, name))
+        print(params['root'], 'lens', len(paths))
         self.data = sorted(paths)
 
         self.transform_image = transforms.Compose([
             # transforms.RandomResizedCrop(64),
-            transforms.Resize((128, 128)),
             # transforms.RandomResizedCrop(224),
 #             transforms.ColorJitter(),
-            # transforms.RandomAffine(10),
-#             transforms.RandomHorizontalFlip(),
-            # transforms.RandomRotation(20),
+#             transforms.RandomAffine(10),
+            transforms.RandomHorizontalFlip(),
+#             transforms.RandomRotation(20),
+            transforms.RandomResizedCrop((128, 128), scale=(params.get('crop_scale', 0.75), 1)),
             transforms.ToTensor(),
             transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
         ])
